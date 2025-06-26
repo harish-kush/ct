@@ -1,0 +1,50 @@
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* mqttServer = "broker.hivemq.com"; // or use local IP
+const int mqttPort = 1883;
+const char* clientID = "home_automation_esp32";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+#define LIGHT_PIN  15
+#define FAN_PIN    2
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LIGHT_PIN, OUTPUT);
+  pinMode(FAN_PIN, OUTPUT);
+  digitalWrite(LIGHT_PIN, LOW);
+  digitalWrite(FAN_PIN, LOW);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) delay(500);
+
+  client.setServer(mqttServer, mqttPort);
+  client.setCallback(callback);
+  
+  while (!client.connected()) {
+    client.connect(clientID);
+  }
+
+  client.subscribe("home/light");
+  client.subscribe("home/fan");
+}
+
+void loop() {
+  client.loop();
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (int i = 0; i < length; i++) message += (char)payload[i];
+
+  if (String(topic) == "home/light") {
+    digitalWrite(LIGHT_PIN, message == "on" ? HIGH : LOW);
+  } else if (String(topic) == "home/fan") {
+    digitalWrite(FAN_PIN, message == "on" ? HIGH : LOW);
+  }
+}
