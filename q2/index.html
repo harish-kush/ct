@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Home Automation</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+  <h2>Smart Home Control</h2>
+  <button onclick="toggle('home/light', 'on')">Light ON</button>
+  <button onclick="toggle('home/light', 'off')">Light OFF</button><br><br>
+  <button onclick="toggle('home/fan', 'on')">Fan ON</button>
+  <button onclick="toggle('home/fan', 'off')">Fan OFF</button>
+
+  <script>
+    const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
+
+    client.on("connect", () => {
+      console.log("Connected to MQTT broker");
+    });
+
+    function toggle(topic, state) {
+      client.publish(topic, state);
+    }
+  </script>
+</body>
+</html>
