@@ -1,0 +1,19 @@
+char command;
+
+void setup() {
+  Serial.begin(9600);         // Start serial for Bluetooth
+  pinMode(13, OUTPUT);        // LED pin
+}
+
+void loop() {
+  if (Serial.available()) {
+    command = Serial.read();
+
+    if (command == '1') {
+      digitalWrite(13, HIGH);  // LED ON
+    } 
+    else if (command == '0') {
+      digitalWrite(13, LOW);   // LED OFF
+    }
+  }
+}
