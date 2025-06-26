@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Security System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status-bar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.active {
+            background: #4CAF50;
+        }
+
+        .status-indicator.inactive {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .camera-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .camera-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #videoFeed, #canvas {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0.7;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #51cf66, #40c057);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .alerts-panel, .settings-panel, .captured-images {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-item {
+            background: linear-gradient(135deg, #ff6b6b, #ffa8a8);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            animation: slideInRight 0.5s ease;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .setting-item input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+
+        .setting-item input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .captured-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .captured-image:hover {
+            transform: scale(1.05);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            animation: slideInDown 0.5s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .motion-detected {
+            border: 3px solid #ff6b6b !important;
+            animation: motionAlert 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes motionAlert {
+            from { box-shadow: 0 0 10px #ff6b6b; }
+            to { box-shadow: 0 0 30px #ff6b6b; }
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Smart Security System</h1>
+            <p>Advanced Motion Detection & Alert System</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="systemStatus"></div>
+                <span id="systemStatusText">System Offline</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="cameraStatus"></div>
+                <span id="cameraStatusText">Camera Disconnected</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="motionStatus"></div>
+                <span id="motionStatusText">No Motion</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="camera-section">
+                <div class="camera-container">
+                    <video id="videoFeed" autoplay muted></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+                <div class="controls">
+                    <button class="btn success" id="startBtn">Start System</button>
+                    <button class="btn danger" id="stopBtn" disabled>Stop System</button>
+                    <button class="btn" id="captureBtn" disabled>Manual Capture</button>
+                    <button class="btn" id="testAlertBtn">Test Alert</button>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="alerts-panel">
+                    <div class="panel-title">
+                        🚨 Recent Alerts
+                    </div>
+                    <div id="alertsList">
+                        <p style="color: #666; font-style: italic;">No alerts yet</p>
+                    </div>
+                </div>
+
+                <div class="settings-panel">
+                    <div class="panel-title">
+                        ⚙️ Settings
+                    </div>
+                    <div class="setting-item">
+                        <label for="sensitivity">Motion Sensitivity</label>
+                        <input type="range" id="sensitivity" min="1" max="10" value="5">
+                    </div>
+                    <div class="setting-item">
+                        <label for="alertSound">Alert Sound</label>
+                        <input type="checkbox" id="alertSound" checked>
+                    </div>
+                    <div class="setting-item">
+                        <label for="autoCapture">Auto Capture on Motion</label>
+                        <input type="checkbox" id="autoCapture" checked>
+                    </div>
+                </div>
+
+                <div class="captured-images">
+                    <div class="panel-title">
+                        📸 Captured Images
+                    </div>
+                    <div id="imagesList">
+                        <p style="color: #666; font-style: italic;">No images captured</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SecuritySystem {
+            constructor() {
+                this.video = document.getElementById('videoFeed');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.isActive = false;
+                this.isDetecting = false;
+                this.previousFrame = null;
+                this.motionThreshold = 5000;
+                this.capturedImages = [];
+                this.alerts = [];
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.updateStatus();
+            }
+
+            initializeElements() {
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.captureBtn = document.getElementById('captureBtn');
+                this.testAlertBtn = document.getElementById('testAlertBtn');
+                this.sensitivitySlider = document.getElementById('sensitivity');
+                this.alertSoundCheck = document.getElementById('alertSound');
+                this.autoCaptureCheck = document.getElementById('autoCapture');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startSystem());
+                this.stopBtn.addEventListener('click', () => this.stopSystem());
+                this.captureBtn.addEventListener('click', () => this.captureImage());
+                this.testAlertBtn.addEventListener('click', () => this.testAlert());
+                this.sensitivitySlider.addEventListener('input', (e) => {
+                    this.motionThreshold = (11 - e.target.value) * 1000;
+                });
+            }
+
+            async startSystem() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { width: 640, height: 480 } 
+                    });
+                    this.video.srcObject = stream;
+                    this.isActive = true;
+                    
+                    this.video.addEventListener('loadedmetadata', () => {
+                        this.canvas.width = this.video.videoWidth;
+                        this.canvas.height = this.video.videoHeight;
+                        this.startMotionDetection();
+                    });
+
+                    this.updateControls();
+                    this.updateStatus();
+                    this.showNotification('Security system activated!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    this.showNotification('Failed to access camera', 'error');
+                }
+            }
+
+            stopSystem() {
+                if (this.video.srcObject) {
+                    this.video.srcObject.getTracks().forEach(track => track.stop());
+                    this.video.srcObject = null;
+                }
+                this.isActive = false;
+                this.isDetecting = false;
+                this.previousFrame = null;
+                
+                this.updateControls();
+                this.updateStatus();
+                this.showNotification('Security system deactivated', 'warning');
+            }
+
+            startMotionDetection() {
+                if (!this.isActive) return;
+
+                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                const currentFrame = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.previousFrame) {
+                    const motionLevel = this.detectMotion(currentFrame, this.previousFrame);
+                    
+                    if (motionLevel > this.motionThreshold) {
+                        this.handleMotionDetected();
+                    } else {
+                        this.handleNoMotion();
+                    }
+                }
+
+                this.previousFrame = currentFrame;
+                requestAnimationFrame(() => this.startMotionDetection());
+            }
+
+            detectMotion(current, previous) {
+                const currentData = current.data;
+                const previousData = previous.data;
+                let motionLevel = 0;
+
+                for (let i = 0; i < currentData.length; i += 4) {
+                    const rDiff = Math.abs(currentData[i] - previousData[i]);
+                    const gDiff = Math.abs(currentData[i + 1] - previousData[i + 1]);
+                    const bDiff = Math.abs(currentData[i + 2] - previousData[i + 2]);
+                    
+                    motionLevel += rDiff + gDiff + bDiff;
+                }
+
+                return motionLevel;
+            }
+
+            handleMotionDetected() {
+                if (!this.isDetecting) {
+                    this.isDetecting = true;
+                    this.video.classList.add('motion-detected');
+                    
+                    const alert = this.createAlert('Motion detected!');
+                    this.addAlert(alert);
+                    
+                    if (this.alertSoundCheck.checked) {
+                        this.playAlertSound();
+                    }
+                    
+                    if (this.autoCaptureCheck.checked) {
+                        this.captureImage();
+                    }
+                    
+                    this.updateStatus();
+                    
+                    // Reset detection after 3 seconds
+                    setTimeout(() => {
+                        this.isDetecting = false;
+                        this.video.classList.remove('motion-detected');
+                        this.updateStatus();
+                    }, 3000);
+                }
+            }
+
+            handleNoMotion() {
+                // Motion handling is already managed by the timeout in handleMotionDetected
+            }
+
+            captureImage() {
+                if (!this.isActive) {
+                    this.showNotification('System must be active to capture images', 'error');
+                    return;
+                }
+
+                const captureCanvas = document.createElement('canvas');
+                const captureCtx = captureCanvas.getContext('2d');
+                
+                captureCanvas.width = this.video.videoWidth;
+                captureCanvas.height = this.video.videoHeight;
+                captureCtx.drawImage(this.video, 0, 0);
+                
+                const imageData = captureCanvas.toDataURL('image/jpeg', 0.8);
+                const timestamp = new Date().toLocaleString();
+                
+                this.capturedImages.unshift({ data: imageData, timestamp });
+                this.updateImagesList();
+                this.showNotification('Image captured successfully!', 'success');
+            }
+
+            createAlert(message) {
+                return {
+                    id: Date.now(),
+                    message,
+                    timestamp: new Date().toLocaleString(),
+                    type: 'motion'
+                };
+            }
+
+            addAlert(alert) {
+                this.alerts.unshift(alert);
+                if (this.alerts.length > 10) {
+                    this.alerts = this.alerts.slice(0, 10);
+                }
+                this.updateAlertsList();
+            }
+
+            testAlert() {
+                const alert = this.createAlert('Test alert - System working correctly');
+                this.addAlert(alert);
+                
+                if (this.alertSoundCheck.checked) {
+                    this.playAlertSound();
+                }
+                
+                this.showNotification('Test alert sent!', 'success');
+            }
+
+            playAlertSound() {
+                // Create audio context and play alert tone
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            }
+
+            updateControls() {
+                this.startBtn.disabled = this.isActive;
+                this.stopBtn.disabled = !this.isActive;
+                this.captureBtn.disabled = !this.isActive;
+            }
+
+            updateStatus() {
+                const systemStatus = document.getElementById('systemStatus');
+                const systemStatusText = document.getElementById('systemStatusText');
+                const cameraStatus = document.getElementById('cameraStatus');
+                const cameraStatusText = document.getElementById('cameraStatusText');
+                const motionStatus = document.getElementById('motionStatus');
+                const motionStatusText = document.getElementById('motionStatusText');
+
+                if (this.isActive) {
+                    systemStatus.className = 'status-indicator active';
+                    systemStatusText.textContent = 'System Online';
+                    cameraStatus.className = 'status-indicator active';
+                    cameraStatusText.textContent = 'Camera Connected';
+                } else {
+                    systemStatus.className = 'status-indicator inactive';
+                    systemStatusText.textContent = 'System Offline';
+                    cameraStatus.className = 'status-indicator inactive';
+                    cameraStatusText.textContent = 'Camera Disconnected';
+                }
+
+                if (this.isDetecting) {
+                    motionStatus.className = 'status-indicator active';
+                    motionStatusText.textContent = 'Motion Detected!';
+                } else {
+                    motionStatus.className = 'status-indicator inactive';
+                    motionStatusText.textContent = 'No Motion';
+                }
+            }
+
+            updateAlertsList() {
+                const alertsList = document.getElementById('alertsList');
+                
+                if (this.alerts.length === 0) {
+                    alertsList.innerHTML = '<p style="color: #666; font-style: italic;">No alerts yet</p>';
+                    return;
+                }
+
+                alertsList.innerHTML = this.alerts.map(alert => 
+                    `<div class="alert-item">
+                        <strong>${alert.message}</strong><br>
+                        <small>${alert.timestamp}</small>
+                    </div>`
+                ).join('');
+            }
+
+            updateImagesList() {
+                const imagesList = document.getElementById('imagesList');
+                
+                if (this.capturedImages.length === 0) {
+                    imagesList.innerHTML = '<p style="color: #666; font-style: italic;">No images captured</p>';
+                    return;
+                }
+
+                imagesList.innerHTML = this.capturedImages.slice(0, 5).map((img, index) => 
+                    `<div>
+                        <img src="${img.data}" alt="Captured ${index + 1}" class="captured-image" 
+                             onclick="window.open('${img.data}', '_blank')">
+                        <small style="display: block; text-align: center; margin-bottom: 10px;">
+                            ${img.timestamp}
+                        </small>
+                    </div>`
+                ).join('');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                
+                if (type === 'error') {
+                    notification.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
+                } else if (type === 'warning') {
+                    notification.style.background = 'linear-gradient(135deg, #ffa726, #ff9800)';
+                }
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // Initialize the security system when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new SecuritySystem();
+        });
+    </script>
+</body>
+</html>
